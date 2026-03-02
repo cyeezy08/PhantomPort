@@ -6,8 +6,10 @@ Edit this file or use environment variables.
 import os
 
 # --- OpenRouter API ---
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "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")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "put_ur_own_shit")
+# set YOU OWN DESIRED MODELS PAID OR FREE RECOMMEND HERMES but adjust railguards urself
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1/chat/completions"
+
 
 # Use a capable model — free or paid
 MODEL = os.getenv("PHANTOMPORT_MODEL", "nousresearch/hermes-3-llama-3.1-405b:free")

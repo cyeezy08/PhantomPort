@@ -1,15 +1,15 @@
 <div align="center">
 
 ```
-   ██████╗ ██╗  ██╗ █████╗ ███╗   ██╗████████╗ ██████╗ ███╗   ███╗██████╗  ██████╗ ██████╗ ████████╗
-   ██╔══██╗██║  ██║██╔══██╗████╗  ██║╚══██╔══╝██╔═══██╗████╗ ████║██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝
+  ██████╗ ██╗  ██╗ █████╗ ███╗   ██╗████████╗ ██████╗ ███╗   ███╗██████╗  ██████╗ ██████╗ ████████╗
+  ██╔══██╗██║  ██║██╔══██╗████╗  ██║╚══██╔══╝██╔═══██╗████╗ ████║██╔══██╗██╔═══██╗██╔══██╗╚══██╔══╝
 ██████╔╝███████║███████║██╔██╗ ██║   ██║   ██║   ██║██╔████╔██║██████╔╝██║   ██║██████╔╝   ██║
 ██╔═══╝ ██╔══██║██╔══██║██║╚██╗██║   ██║   ██║   ██║██║╚██╔╝██║██╔═══╝ ██║   ██║██╔══██╗   ██║
 ██║     ██║  ██║██║  ██║██║ ╚████║   ██║   ╚██████╔╝██║ ╚═╝ ██║██║     ╚██████╔╝██║  ██║   ██║
 ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝  ╚═╝    ╚═════╝ ╚═╝     ╚═╝╚═╝      ╚═════╝ ╚═╝  ╚═╝   ╚═╝
 ```
 
-**AI-guided reconnaissance engine. Idk go Fuck around and find out**
+**Smart recon engine powered by OpenRouter. Built for labs and CTFs by CYezzy**
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square&logo=python)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
@@ -17,115 +17,78 @@
 
 </div>
 
----
-
 ## What is PhantomPort?
 
-PhantomPort uses an AI model as a **strategy engine** — not a shell.
+PhantomPort is a recon engine that uses a language model via OpenRouter to decide what nmap scan to run next based on what it already found. Instead of running the same commands every time, it builds up a picture of the target and escalates intelligently.
 
-Most "AI + security" tools just wrap a CLI in ChatGPT. PhantomPort is different. It runs a goal-driven decision loop where the AI evaluates what was found, scores whether the scan was actually useful, and only then decides what to do next. Every proposed command passes through a hard rule-based safety validator before anything executes.
-
-The AI suggests. You control execution. Nothing runs blind.
-
----
-
-## How it works
+You set the goal. It figures out the path.
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                   PhantomPort Loop                      │
-│                                                         │
-│   Phase 0 — AI asks user for their recon objective      │
-│                        │                                │
-│   Phase 1 — Baseline scan (no AI, always runs first)    │
-│                        │                                │
-│   Phase 2 — AI decision loop:                           │
-│                                                         │
-│        AI proposes next nmap command                    │
-│                        │                                │
-│             Reasonability gate                          │
-│        (is this a logical next step?)                   │
-│                        │                                │
-│              Safety validator                           │
-│         (hard rules, no exceptions)                     │
-│                        │                                │
-│                    Execute                              │
-│                        │                                │
-│               Score the result                          │
-│                        │                                │
-│         score > 0 ──► keep going                        │
-│         score ≤ 0 ──► pivot strategy                    │
-│                        │                                │
-│              Save state to JSON                         │
-│         (resume if interrupted)                         │
-└─────────────────────────────────────────────────────────┘
+Phase 0 - asks what you're trying to find
+Phase 1 - runs a baseline scan with no model involvement
+Phase 2 - loop starts:
+          model proposes next command
+          reasonability check runs
+          safety validator runs
+          command executes
+          result gets scored
+          if score is good, keep going
+          if score is bad, change strategy
+          state saves to disk
+          repeat
 ```
-
----
 
 ## Features
 
-- **Goal-driven scanning** — AI asks what you're trying to achieve before touching a single port
-- **Adaptive decision loop** — each scan informs the next; no mindless repetition
-- **Scoring system** — new ports, service versions, OS fingerprints, and vuln hints all scored; redundant scans penalised
-- **Dual validation gate** — AI reasonability check + hard rule-based safety validator before every execution
-- **XML-first parsing** — nmap always outputs `-oX`; structured data not regex'd terminal spam
-- **Session persistence** — full state saved to JSON after every scan; resume anytime with `--resume`
-- **Dry run mode** — see exactly what the AI would do without executing a single scan
-- **Three scan modes** — stealth, balanced, aggressive
-
----
+- Set a goal at the start and every decision gets made around it
+- Each scan builds on the last, no repeated commands
+- Every result gets a score based on what new info was found
+- Two validation steps before anything runs
+- nmap output saved as XML and parsed properly, not scraped from terminal text
+- Full session state saved after every scan so you can resume if it gets interrupted
+- Dry run mode to preview what would run without touching anything
+- Stealth, balanced, and aggressive modes
 
 ## Architecture
 
-| File | Responsibility |
+| File | What it does |
 |---|---|
-| `main.py` | Entry point, CLI args, orchestration loop |
-| `phantomport/ai_engine.py` | OpenRouter API, goal elicitation, command proposal, reasonability gate |
-| `phantomport/scanner.py` | nmap execution, XML parsing, result normalisation |
-| `phantomport/validator.py` | Hard rule-based safety — flag whitelist, injection blocking, target lock |
-| `phantomport/evaluator.py` | Scores scan results, determines if strategy should pivot |
-| `phantomport/state.py` | Session state, accumulated knowledge, JSON persistence |
-| `phantomport/config.py` | All constants, API config, mode maps, safety lists |
+| `main.py` | entry point, CLI, main loop |
+| `phantomport/ai_engine.py` | OpenRouter calls, goal setup, command proposals |
+| `phantomport/scanner.py` | runs nmap, parses XML output |
+| `phantomport/validator.py` | blocks unsafe commands, checks flags against whitelist |
+| `phantomport/evaluator.py` | scores results, flags stale strategies |
+| `phantomport/state.py` | tracks everything found, saves to JSON |
+| `phantomport/config.py` | settings, model config, safety lists |
 
----
+## Scoring
 
-## Scoring System
+Results get scored after every scan. If the score hits zero or below, the engine changes approach.
 
-PhantomPort scores every scan result before deciding whether to continue on the same strategy:
-
-| Event | Score |
+| What happened | Score |
 |---|---|
-| New open port discovered | +2 |
-| New service version identified | +3 |
-| OS fingerprint obtained (first time) | +4 |
-| Vulnerability hint found | +5 |
-| Redundant scan (nothing new) | -1 |
-| Scan timed out | -2 |
-
-If the score is `<= 0`, the AI is told the strategy is stale and must pivot approach.
-
----
+| New open port | +2 |
+| New service version | +3 |
+| OS fingerprint (first time) | +4 |
+| Vulnerability hint | +5 |
+| Nothing new found | -1 |
+| Timed out | -2 |
 
 ## Safety
 
-PhantomPort is built with the assumption that the AI **cannot be fully trusted**.
+Two checks run before every command executes.
 
-Every proposed command goes through two gates before execution:
+**Check 1 - logic review**
+Looks at the proposal and the current state. Rejects anything redundant, anything that jumps scan depth too fast, or anything that does not match the goal.
 
-**Gate 1 — Reasonability (AI)**
-A separate AI call reviews the proposal and the current state. It rejects commands that are redundant, skip depth levels, don't align with the goal, or are too aggressive for the current mode.
-
-**Gate 2 — Safety Validator (hard rules, no AI)**
+**Check 2 - hard validator**
 - Command must start with `nmap`
-- All flags checked against an explicit whitelist
-- Banned patterns: `;` `&&` `||` `|` backticks `$()` `${}`
-- Banned commands: `rm` `wget` `curl` `nc` `bash` `sh`
-- Target lock — the session target must appear in the command (prevents mid-session host pivots)
+- Every flag is checked against a whitelist
+- Blocks `;` `&&` `||` `|` backticks `$()` `${}`
+- Blocks `rm` `wget` `curl` `nc` `bash` `sh`
+- Target lock prevents the model from scanning a different host mid-session
 
-The safety validator cannot be overridden by the AI. Ever.
-
----
+Nothing bypasses the validator.
 
 ## Install
 
@@ -136,107 +99,82 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
-**Requirements:** Python 3.11+, nmap installed on your system, an OpenRouter API key.
+Python 3.11+, nmap on your system, and an OpenRouter API key required.
 
-Set your API key:
 ```bash
-# Option 1 — environment variable
 export OPENROUTER_API_KEY="sk-or-v1-..."
-
-# Option 2 — edit phantomport/config.py directly
-OPENROUTER_API_KEY = "sk-or-v1-..."
 ```
+
+Or paste it directly into `phantomport/config.py`.
 
 Set your model in `phantomport/config.py`:
 ```python
 MODEL = "nousresearch/hermes-3-llama-3.1-405b:free"
 ```
 
----
-
 ## Usage
 
 ```bash
-# Standard scan
+# basic scan
 python main.py 10.10.10.10
 
-# Stealth mode (slower timing, lower footprint)
+# stealth mode
 python main.py 10.10.10.10 --mode stealth
 
-# Aggressive mode (faster, noisier)
+# aggressive mode
 python main.py 10.10.10.10 --mode aggressive
 
-# Dry run — AI proposes commands, nothing executes
+# preview without running anything
 python main.py 10.10.10.10 --dry-run
 
-# Resume an interrupted session
+# resume a previous session
 python main.py --resume sessions/session_abc123.json
 
-# Cap the number of scan iterations
+# limit iterations
 python main.py 10.10.10.10 --max-iter 10
 ```
 
----
+## Models
 
-## Recommended Free Models (OpenRouter)
-
-The `:free` suffix is required for free tier models on OpenRouter.
+Free tier on OpenRouter requires the `:free` suffix.
 
 | Model | Notes |
 |---|---|
-| `nousresearch/hermes-3-llama-3.1-405b:free` | Best reasoning, recommended |
-| `meta-llama/llama-3.1-8b-instruct:free` | Fast, lighter |
-| `google/gemma-3-4b-it:free` | Fallback |
+| `nousresearch/hermes-3-llama-3.1-405b:free` | best results so far |
+| `meta-llama/llama-3.1-8b-instruct:free` | faster |
+| `google/gemma-3-4b-it:free` | backup |
 
-Free tier models can go down. If you get a 503, swap the model string and retry.
+503 errors mean the model is overloaded. Swap the string and try again.
 
----
+## Sessions
 
-## Session Files
+Sessions save to `sessions/session_<id>.json` after every scan. Includes the full scan history, every port and service found, OS info, vuln hints, current depth, and the original goal. Pick up where you left off with `--resume`.
 
-Every session saves to `sessions/session_<id>.json` after each scan. The file contains the full scan history, all discovered ports and services, OS fingerprint, vulnerability hints, current depth level, strategy state, and your original goal. If PhantomPort is interrupted mid-session you lose nothing — pass the file to `--resume` and it picks up exactly where it stopped.
+## Scan Depth
 
----
+The engine moves through depth levels one step at a time.
 
-## Scan Depth Levels
-
-The AI escalates through depth levels one at a time:
-
-| Level | Description |
+| Level | What runs |
 |---|---|
-| 1 | Top 1000 ports, SYN scan |
-| 2 | Full port range |
-| 3 | Service version detection |
-| 4 | Default script scan |
-| 5 | Targeted vulnerability scripts |
-
-Skipping levels requires justification. The reasonability gate enforces this.
-
----
+| 1 | top 1000 ports, SYN scan |
+| 2 | full port range |
+| 3 | service version detection |
+| 4 | default script scan |
+| 5 | targeted vuln scripts |
 
 ## Legal
 
-**For authorized targets only.**
+For authorized targets only. Your own machines, home labs, HackTheBox, TryHackMe, VulnHub. Do not scan anything you do not have permission to scan. The authors take no responsibility for misuse.
 
-Use PhantomPort on your own machines, lab environments, HackTheBox, TryHackMe, VulnHub, or any target you have explicit written permission to scan. Unauthorized scanning is illegal. The authors accept no liability for misuse.
+## What'd I like to do next 
 
----
-
-## Roadmap
-
-- [ ] Merge propose + reasonability into single API call (reduce rate limit pressure)
-- [ ] CVE lookup integration per discovered service
-- [ ] Web service fingerprinting hints (gobuster/ffuf suggestions)
-- [ ] Service-specific script auto-selection (WinRM, SMB, FTP logic)
-- [ ] HTML session report export
-- [ ] Docker container for portable deployment
-
----
+- [ ] single API call for propose and validate combined (cuts rate limit issues)
+- [ ] CVE lookup per service found
+- [ ] gobuster/ffuf hints for web ports
+- [ ] auto script selection based on service (WinRM, SMB, FTP etc)
+- [ ] HTML report export
+- [ ] Docker support
 
 ## Contributing
 
-Pull requests welcome. If you find a bypass for the safety validator, open an issue — don't exploit it.
-
----
-
-*Built for OSCP prep. Understand every line before you trust it.*
+PRs are open. If you find a way around the validator, open an issue.

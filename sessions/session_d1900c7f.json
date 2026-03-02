@@ -1,0 +1,33 @@
+{
+  "target": "8.8.8.8",
+  "mode": "balanced",
+  "session_id": "d1900c7f",
+  "session_file": "./sessions\\session_d1900c7f.json",
+  "goal": {
+    "summary": "fingerprint the os",
+    "goal_type": "full_recon",
+    "priority": "thoroughness",
+    "notes": ""
+  },
+  "iteration": 1,
+  "known_ports": [],
+  "known_services": {},
+  "os_fingerprint": null,
+  "vuln_hints": [],
+  "depth_level": 1,
+  "stale_streak": 1,
+  "strategy_stale": false,
+  "scans": [
+    {
+      "iteration": 1,
+      "command": "nmap -sS -Pn -T3 --top-ports 1000 8.8.8.8 -oX /tmp/phantomport_scan.xml",
+      "score": -1,
+      "timestamp": "2026-03-02T04:22:26.465373",
+      "open_ports": [],
+      "services": {},
+      "os_guess": null,
+      "vuln_hints": [],
+      "raw_xml": ""
+    }
+  ]
+}

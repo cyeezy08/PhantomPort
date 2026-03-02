@@ -93,7 +93,7 @@ Nothing bypasses the validator.
 ## Install
 
 ```bash
-git clone https://github.com/yourusername/phantomport
+git clone https://github.com/cyeezy08/phantomport
 cd phantomport
 pip install -r requirements.txt
 pip install -e .

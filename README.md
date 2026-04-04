@@ -2,7 +2,7 @@
 
 
 
-**Smart recon engine powered by OpenRouter. Built for labs and CTFs by CYezzy**
+# **Smart recon engine powered by OpenRouter. Built for labs and CTFs by CYezzy**
 
 ![Python](https://img.shields.io/badge/Python-3.11+-blue?style=flat-square&logo=python)
 ![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
